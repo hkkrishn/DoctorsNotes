@@ -18,10 +18,15 @@ const users = require('./routes/users');
 //Passport Config
 require('./config/passport')(passport);
 
+//Load DB config
+
+const db = require('./config/database');
+
   
 //Connect to Mongoose
+
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost/DoctorNotes-dev',{ useNewUrlParser: true }).then(()=>{
+mongoose.connect(db.mongoURI,{ useNewUrlParser: true }).then(()=>{
   console.log('MongoDB Connected')
 }).catch(err=>{
   console.log(err)
@@ -69,7 +74,7 @@ app.use((req,res,next)=>{
 
 //setup the templating engine
 
-const port = 5000;
+
 
 //How middleware works
 
@@ -103,6 +108,8 @@ app.get('/about',(req,res)=>{
 //Anythng that is /ideas/anything pertains to the ideas file
 app.use('/ideas',ideas);
 app.use('/users',users);
+
+const port = process.env.PORT || 5000;
 
 app.listen(port,()=>{
  console.log(`server started on port number ${port}`);
