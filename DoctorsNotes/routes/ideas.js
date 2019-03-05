@@ -1,56 +1,63 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
+const{ensureAuthenticated} = require('../helpers/auth')
+
+//Load Authentication Helper
 
 //Load Idea Model
 require('../models/Idea');
 const Idea = mongoose.model('ideas');
 
 //Idea Index  Page
-router.get('/',(req,res)=>{
+router.get('/',ensureAuthenticated,(req,res)=>{
   var today = new Date();
-var dd = today.getDate();
-var mm = today.getMonth() + 1; //January is 0!
-var yyyy = today.getFullYear();
+  var dd = today.getDate();
+  var mm = today.getMonth() + 1; //January is 0!
+  var yyyy = today.getFullYear();
 
-if (dd < 10) {
-  dd = '0' + dd;
-}
+  if (dd < 10) {
+    dd = '0' + dd;
+  }
 
-if (mm < 10) {
-  mm = '0' + mm;
-}
+  if (mm < 10) {
+    mm = '0' + mm;
+  }
 
-today = mm + '/' + dd + '/' + yyyy;
-  Idea.find({}).sort({date:'desc'}).then(ideas=>{
-    res.render('ideas/index',{
-      ideas:ideas,
-      date:today
-      
+  today = mm + '/' + dd + '/' + yyyy;
+  Idea.findOne({user:req.user.id}).sort({date:'desc'}).then(ideas=>{
+      res.render('ideas/index',{
+        ideas:ideas,
+        date:today
+      });
     });
   });
-});
-//Add Idea Route
-router.get('/add',(req,res)=>{
-  const title = 'Ideas'
-  res.render('ideas/add')
-})
-
-//Edit Idea Route
-router.get('/edit/:id', (req, res) => {
-  Idea.findOne({
-    _id: req.params.id
+  //Add Idea Route
+  router.get('/add',ensureAuthenticated,(req,res)=>{
+    const title = 'Ideas'
+    res.render('ideas/add')
   })
-  .then(idea => {
-    res.render('/edit', {
-      idea:idea
+
+  //Edit Idea Route
+  router.get('/edit/:id',ensureAuthenticated, (req, res) => {
+    Idea.findOne({
+      _id: req.params.id
+    })
+    .then(idea => {
+      if(idea.user!= req.user.id){
+        req.flash('error_msg','Not Authorized')
+        res.redirect('/ideas')
+      }else{
+        res.render('/edit', {
+          idea:idea
+        });
+      }
     });
-  });
 });
 
 //Edit form process
 
-router.put('/:id', (req, res) => {
+router.put('/:id',ensureAuthenticated, (req, res) => {
   Idea.findOne({
     _id: req.params.id
   })
@@ -67,7 +74,7 @@ router.put('/:id', (req, res) => {
 });
 
 //Process Form + Server Side Validation
-router.post('/',(req,res)=>{
+router.post('/',ensureAuthenticated,(req,res)=>{
   let errors = [];
 
   if(!req.body.title){
@@ -84,7 +91,7 @@ router.post('/',(req,res)=>{
       details: req.body.details
     });
   } else {
-    const newUser = {title:req.body.title,details:req.body.details}
+    const newUser = {title:req.body.title,details:req.body.details,user:req.user.id}
     new Idea(newUser).save().then(idea =>{
       req.flash('success_msg','You have added another entry to your repository');
 
@@ -95,7 +102,7 @@ router.post('/',(req,res)=>{
 //Delete idea
 
 
-router.delete('/:id',(req,res)=>{
+router.delete('/:id',ensureAuthenticated,(req,res)=>{
   Idea.remove({_id: req.params.id})
     .then(()=>{
       req.flash('success_msg','Entry Deleted')

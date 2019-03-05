@@ -8,10 +8,6 @@ const session = require('express-session');
 const path = require('path');
 const passport = require('passport');
 
-
-
-
-
 const app = express();
 //initialize the express function.
 
@@ -30,9 +26,6 @@ mongoose.connect('mongodb://localhost/DoctorNotes-dev',{ useNewUrlParser: true }
 }).catch(err=>{
   console.log(err)
 });
-
-
-
 
 
 app.engine('handlebars',hbs({defaultLayout:'main'}));
